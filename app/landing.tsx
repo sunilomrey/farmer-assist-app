@@ -1,6 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+const { width } = Dimensions.get('window');
+
+const WHEAT_IMAGE_URL =
+  'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&q=80';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -10,56 +16,76 @@ export default function LandingScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={styles.headerIcon}>🌾</ThemedText>
-        <ThemedText style={styles.headerTitle}>EcoFarm</ThemedText>
-      </View>
+    <View style={styles.container}>
+      {/* Top white section */}
+      <View style={styles.topSection}>
+        {/* Brand header */}
+        <View style={styles.header}>
+          <ThemedText style={styles.headerIcon}>🌱</ThemedText>
+          <ThemedText style={styles.headerTitle}>EcoFarm</ThemedText>
+        </View>
 
-      {/* Welcome Title */}
-      <View style={styles.welcomeTitleContainer}>
-        <ThemedText style={styles.welcomeTitle}>
-          Welcome To The <ThemedText style={styles.highlightGreen}>Future</ThemedText> Of <ThemedText style={styles.highlightGreen}>Farming</ThemedText>
+        {/* Welcome title */}
+        <View style={styles.titleContainer}>
+          <ThemedText style={styles.welcomeTitle}>
+            Welcome To The{' '}
+            <ThemedText style={styles.highlightGreen}>Future</ThemedText>
+            {'\n'}Of{' '}
+            <ThemedText style={styles.highlightGreen}>Farming</ThemedText>
+          </ThemedText>
+          <View style={styles.titleRow}>
+            <View style={styles.inlineBadge}>
+              <ThemedText style={styles.inlineBadgeIcon}>🌿</ThemedText>
+            </View>
+          </View>
+        </View>
+
+        {/* Subtitle */}
+        <ThemedText style={styles.subtitle}>
+          Empowering farmers with smart and sustainable solutions.
         </ThemedText>
       </View>
 
-      {/* Subtitle */}
-      <ThemedText style={styles.subtitle}>
-        Empowering farmers with smart and sustainable solutions.
-      </ThemedText>
+      {/* Bottom image section */}
+      <View style={styles.imageSection}>
+        <Image
+          source={{ uri: WHEAT_IMAGE_URL }}
+          style={styles.backgroundImage}
+          contentFit="cover"
+          transition={300}
+        />
 
-      {/* Background Image Section */}
-      <View style={styles.imageContainer}>
-        <View style={styles.fieldImage}>
-          <ThemedText style={styles.fieldEmoji}>🌾</ThemedText>
+        {/* Growth badge */}
+        <View style={[styles.statBadge, styles.growthBadge]}>
+          <View style={styles.statIconCircle}>
+            <ThemedText style={styles.statIconText}>🌱</ThemedText>
+          </View>
+          <ThemedText style={styles.statLabel}>Growth: 14 cm</ThemedText>
         </View>
 
-        {/* Stats Overlays */}
-        <View style={styles.statOverlay1}>
-          <View style={styles.statBadge}>
-            <ThemedText style={styles.statIcon}>🌱</ThemedText>
-            <ThemedText style={styles.statText}>Growth: 14 cm</ThemedText>
+        {/* Central circular highlight */}
+        <View style={styles.circleHighlight} />
+
+        {/* Moisture badge */}
+        <View style={[styles.statBadge, styles.moistureBadge]}>
+          <View style={styles.statIconCircleDark}>
+            <ThemedText style={styles.statIconText}>💧</ThemedText>
           </View>
+          <ThemedText style={styles.statLabel}>Moisture: 78%</ThemedText>
         </View>
 
-        <View style={styles.statOverlay2}>
-          <View style={styles.statBadge}>
-            <ThemedText style={styles.statIcon}>💧</ThemedText>
-            <ThemedText style={styles.statText}>Moisture: 78%</ThemedText>
-          </View>
+        {/* Get Started button */}
+        <View style={styles.buttonWrapper}>
+          <TouchableOpacity
+            style={styles.getStartedButton}
+            onPress={handleGetStarted}
+            activeOpacity={0.8}
+          >
+            <ThemedText style={styles.getStartedText}>Get Started</ThemedText>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Get Started Button */}
-      <TouchableOpacity 
-        style={styles.getStartedButton}
-        onPress={handleGetStarted}
-        activeOpacity={0.8}
-      >
-        <ThemedText style={styles.getStartedText}>Get Started</ThemedText>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -68,108 +94,153 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  contentContainer: {
-    paddingBottom: 40,
+  topSection: {
+    paddingTop: 56,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
   },
   header: {
-    paddingTop: 20,
-    paddingHorizontal: 16,
-    marginBottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 20,
   },
   headerIcon: {
-    fontSize: 24,
+    fontSize: 26,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B6F47',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#A0763A',
   },
-  welcomeTitleContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
+  titleContainer: {
+    marginBottom: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -6,
   },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    lineHeight: 36,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#222',
+    lineHeight: 42,
   },
   highlightGreen: {
     color: '#2d5016',
+    fontWeight: '800',
+  },
+  inlineBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e8f5e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inlineBadgeIcon: {
+    fontSize: 18,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginHorizontal: 16,
-    marginBottom: 24,
-    lineHeight: 20,
+    fontSize: 15,
+    color: '#777',
+    lineHeight: 22,
   },
-  imageContainer: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    borderRadius: 16,
+  imageSection: {
+    flex: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: 'hidden',
-    height: 280,
     position: 'relative',
   },
-  fieldImage: {
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-    backgroundColor: '#FFD580',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 16,
-  },
-  fieldEmoji: {
-    fontSize: 80,
-    opacity: 0.8,
-  },
-  statOverlay1: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-  },
-  statOverlay2: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
   },
   statBadge: {
+    position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: rgba(0, 0, 0, 0.6),
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 28,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  statIcon: {
+  growthBadge: {
+    top: 40,
+    left: 16,
+    zIndex: 10,
+  },
+  moistureBadge: {
+    bottom: 110,
+    right: 16,
+    zIndex: 10,
+  },
+  statIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#4a7c2e',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statIconCircleDark: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statIconText: {
     fontSize: 16,
   },
-  statText: {
-    fontSize: 12,
+  statLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: '#444',
+  },
+  circleHighlight: {
+    position: 'absolute',
+    top: '30%',
+    alignSelf: 'center',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  buttonWrapper: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
   },
   getStartedButton: {
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: '#8B6F47',
-    borderRadius: 28,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   getStartedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#333',
   },
 });
-
-function rgba(r: number, g: number, b: number, a: number) {
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
-}

@@ -4,7 +4,7 @@ import axios from 'axios';
 const BASE_URL = 'http://localhost:3000/api/v1';
 
 // MOCK JWT TOKEN for testing (should be retrieved from secure storage in production)
-const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJuYW1lIjoiVGVzdCBGYXJtZXIiLCJpYXQiOjE3NzIyODg3MzQsImV4cCI6MTc3MjI5MjMzNH0.PEX9Mln8cThvcxX5tAvB-oUemY8HTvl0Att5cKLvNl0';
+const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJuYW1lIjoiVGVzdCBGYXJtZXIiLCJpYXQiOjE3NzIyOTI0MzEsImV4cCI6MTc3MjI5NjAzMX0.ZW34iamEIevtPk85SNLCnprq1zAsOEK5h9cbmsOLN28';
 
 export const apiClient = axios.create({
     baseURL: BASE_URL,

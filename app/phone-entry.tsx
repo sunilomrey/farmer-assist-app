@@ -2,20 +2,46 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+
+const COUNTRY_CODES = [
+  { code: '+91', flag: '🇮🇳', name: 'India' },
+  { code: '+1', flag: '🇺🇸', name: 'United States' },
+  { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
+  { code: '+61', flag: '🇦🇺', name: 'Australia' },
+  { code: '+86', flag: '🇨🇳', name: 'China' },
+  { code: '+81', flag: '🇯🇵', name: 'Japan' },
+  { code: '+49', flag: '🇩🇪', name: 'Germany' },
+  { code: '+33', flag: '🇫🇷', name: 'France' },
+  { code: '+971', flag: '🇦🇪', name: 'UAE' },
+  { code: '+65', flag: '🇸🇬', name: 'Singapore' },
+  { code: '+880', flag: '🇧🇩', name: 'Bangladesh' },
+  { code: '+92', flag: '🇵🇰', name: 'Pakistan' },
+  { code: '+977', flag: '🇳🇵', name: 'Nepal' },
+  { code: '+94', flag: '🇱🇰', name: 'Sri Lanka' },
+];
 
 export default function PhoneEntryScreen() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]); // India default
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
-  const handleContinue = () => {
-    // Validate phone number
-    const phoneRegex = /^[0-9]{10,}$/;
+  const handleSendOTP = () => {
     const cleanPhone = phoneNumber.replace(/\D/g, '');
 
-    if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
-      Alert.alert('Invalid Phone', 'Please enter a valid phone number');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
       return;
     }
 
@@ -25,32 +51,34 @@ export default function PhoneEntryScreen() {
       setLoading(false);
       router.push({
         pathname: '/otp-verification',
-        params: { phoneNumber: cleanPhone },
+        params: { phoneNumber: cleanPhone, countryCode: selectedCountry.code },
       });
     }, 500);
   };
 
   const formatPhoneNumber = (text: string) => {
-    const cleaned = text.replace(/\D/g, '');
+    const cleaned = text.replace(/\D/g, '').slice(0, 10);
     setPhoneNumber(cleaned);
   };
+
+  const isPhoneValid = phoneNumber.replace(/\D/g, '').length >= 10;
 
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ThemedText style={styles.backButton}>← Back</ThemedText>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ThemedText style={styles.backButtonText}>← Back</ThemedText>
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Phone Verification</ThemedText>
-        <View style={styles.spacer} />
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <ThemedText style={styles.icon}>📱</ThemedText>
+          <View style={styles.iconCircle}>
+            <ThemedText style={styles.icon}>📱</ThemedText>
+          </View>
         </View>
 
         {/* Title */}
@@ -63,17 +91,31 @@ export default function PhoneEntryScreen() {
 
         {/* Phone Input */}
         <View style={styles.inputContainer}>
-          <View style={styles.countryCodeContainer}>
-            <ThemedText style={styles.countryCode}>🇺🇸 +1</ThemedText>
-          </View>
+          {/* Country Code Picker */}
+          <TouchableOpacity
+            style={styles.countryCodeContainer}
+            onPress={() => setShowCountryPicker(true)}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={styles.countryFlag}>
+              {selectedCountry.flag}
+            </ThemedText>
+            <ThemedText style={styles.countryCode}>
+              {selectedCountry.code}
+            </ThemedText>
+            <ThemedText style={styles.dropdownArrow}>▼</ThemedText>
+          </TouchableOpacity>
+
+          {/* Phone Number Input */}
           <TextInput
             style={styles.phoneInput}
-            placeholder="(555) 123 - 4567"
-            placeholderTextColor="#ccc"
+            placeholder="Enter mobile number"
+            placeholderTextColor="#bbb"
             keyboardType="phone-pad"
             value={phoneNumber}
             onChangeText={formatPhoneNumber}
             editable={!loading}
+            maxLength={10}
           />
         </View>
 
@@ -83,22 +125,66 @@ export default function PhoneEntryScreen() {
         </ThemedText>
       </View>
 
-      {/* Continue Button */}
+      {/* Send OTP Button */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
-            styles.continueButton,
-            (!phoneNumber || loading) && styles.buttonDisabled,
+            styles.sendOtpButton,
+            (!isPhoneValid || loading) && styles.buttonDisabled,
           ]}
-          onPress={handleContinue}
-          disabled={!phoneNumber || loading}
+          onPress={handleSendOTP}
+          disabled={!isPhoneValid || loading}
           activeOpacity={0.8}
         >
-          <ThemedText style={styles.continueText}>
-            {loading ? 'Sending...' : 'Continue'}
+          <ThemedText style={styles.sendOtpText}>
+            {loading ? 'Sending OTP...' : 'Send OTP'}
           </ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Country Picker Modal */}
+      <Modal
+        visible={showCountryPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCountryPicker(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowCountryPicker(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+            <ThemedText style={styles.modalTitle}>Select Country</ThemedText>
+            <FlatList
+              data={COUNTRY_CODES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.countryRow,
+                    item.code === selectedCountry.code && styles.countryRowActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedCountry(item);
+                    setShowCountryPicker(false);
+                  }}
+                >
+                  <ThemedText style={styles.countryRowFlag}>
+                    {item.flag}
+                  </ThemedText>
+                  <ThemedText style={styles.countryRowName}>
+                    {item.name}
+                  </ThemedText>
+                  <ThemedText style={styles.countryRowCode}>
+                    {item.code}
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
@@ -109,105 +195,164 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 56,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
-  backButton: {
-    fontSize: 14,
+  backBtn: {
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: 15,
     color: '#2d5016',
     fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  spacer: {
-    width: 50,
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
-    justifyContent: 'flex-start',
+    paddingTop: 20,
   },
   iconContainer: {
     alignItems: 'center',
     marginBottom: 24,
   },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#e8f5e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   icon: {
-    fontSize: 56,
+    fontSize: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    color: '#222',
+    marginBottom: 10,
     textAlign: 'center',
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: '#777',
     marginBottom: 32,
     textAlign: 'center',
     lineHeight: 20,
   },
   inputContainer: {
     flexDirection: 'row',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#e0e0e0',
-    borderRadius: 12,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 24,
+    borderRadius: 14,
+    backgroundColor: '#fafafa',
+    marginBottom: 16,
     overflow: 'hidden',
   },
   countryCodeContainer: {
-    paddingHorizontal: 12,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
     borderRightWidth: 1,
     borderRightColor: '#e0e0e0',
+    gap: 6,
+    backgroundColor: '#f5f5f5',
+  },
+  countryFlag: {
+    fontSize: 20,
   },
   countryCode: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
+  dropdownArrow: {
+    fontSize: 10,
+    color: '#999',
+  },
   phoneInput: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    fontSize: 17,
     color: '#333',
+    letterSpacing: 1,
   },
   infoText: {
     fontSize: 12,
-    color: '#999',
+    color: '#aaa',
     textAlign: 'center',
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    gap: 12,
+    paddingBottom: 44,
   },
-  continueButton: {
-    paddingVertical: 14,
+  sendOtpButton: {
+    paddingVertical: 16,
     backgroundColor: '#2d5016',
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueText: {
-    fontSize: 16,
-    fontWeight: '600',
+  sendOtpText: {
+    fontSize: 17,
+    fontWeight: '700',
     color: '#fff',
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%',
+    paddingBottom: 30,
+  },
+  modalHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#ddd',
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  countryRowActive: {
+    backgroundColor: '#e8f5e1',
+  },
+  countryRowFlag: {
+    fontSize: 22,
+  },
+  countryRowName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  countryRowCode: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
   },
 });
