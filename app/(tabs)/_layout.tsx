@@ -12,7 +12,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarActiveTintColor: '#fff',
-        tabBarInactiveTintColor: '#bbb',
+        tabBarInactiveTintColor: '#8B6F47',
         tabBarStyle: styles.tabBar,
         tabBarShowLabel: false,
       }}>
@@ -20,20 +20,34 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <IconSymbol size={22} name="house.fill" color={focused ? '#fff' : '#8B6F47'} />
+              <IconSymbol size={focused ? 28 : 22} name="house.fill" color={focused ? '#fff' : '#333'} />
             </View>
           ),
         }}
       />
+
+      {/* Voice tab - center focus */}
       <Tabs.Screen
-        name="explore"
+        name="voice"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
+          title: 'Voice',
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.tabIconVoice, focused && styles.tabIconVoiceActive]}>
+              <IconSymbol size={focused ? 40 : 32} name="speaker.wave.2.fill" color={focused ? '#fff' : '#333'} />
+            </View>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ focused }) => (
             <View style={[styles.tabIcon, focused && styles.tabIconActive]}>
-              <IconSymbol size={22} name="paperplane.fill" color={focused ? '#fff' : '#8B6F47'} />
+              <IconSymbol size={focused ? 28 : 22} name="person.fill" color={focused ? '#fff' : '#333'} />
             </View>
           ),
         }}
@@ -45,31 +59,65 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 28 : 16,
-    left: '25%',
-    right: '25%',
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#f5efe6',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#C8A96E',
     borderTopWidth: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 8,
-    paddingBottom: 0,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10, // respect safe area
+    flexDirection: 'row',              // ensure icons laid out horizontally
+    justifyContent: 'space-around',    // space icons evenly according to industry norms
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 20,             // extra breathing room inside bar
   },
   tabIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#e8dfd2',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f5efe6',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#C8A96E',
+    marginHorizontal: 8,            // added spacing between tabs
+  },
+  tabIconVoice: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f5efe6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#C8A96E',
+    marginTop: -24,                 // raise above bar for emphasis
+  },
+  tabIconVoiceActive: {
+    width: 100,                       // grow from 80 to 100
+    height: 100,                      // grow from 80 to 100
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8,
   },
   tabIconActive: {
-    backgroundColor: '#222',
+    width: 60,                        // grow from 50 to 60
+    height: 60,                       // grow from 50 to 60
+    backgroundColor: '#fff',            // white center
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
 });

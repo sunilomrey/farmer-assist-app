@@ -1,6 +1,12 @@
-import { ThemedText } from '@/components/themed-text';
+import React, { useEffect, useState } from 'react';
+import { View, ScrollView, ActivityIndicator, Dimensions, StyleSheet, Platform } from 'react-native';
+import * as Location from 'expo-location';
 import { Image } from 'expo-image';
-import { Dimensions, Platform, ScrollView, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { weatherService } from '@/services/api';
+import BottomNav from '@/components/ui/bottom-nav';
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 16;
@@ -17,7 +23,81 @@ const COMMODITIES = [
   { emoji: '🍅', label: 'Tomato' },
 ];
 
+interface ForecastDay {
+  date: string;
+  maxTemp: string;
+  minTemp: string;
+  weatherCode: number;
+}
+
+interface WeatherData {
+  locationName: string;
+  temperature: string;
+  humidity: string;
+  windSpeed: string;
+  precipitation: string;
+  forecast: ForecastDay[];
+}
+
 export default function HomeScreen() {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        setLoading(true);
+
+        let { status } = await Location.requestForegroundPermissionsAsync();
+
+        let lat: number | undefined;
+        let lon: number | undefined;
+        let locationName: string | undefined;
+
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          lat = location.coords.latitude;
+          lon = location.coords.longitude;
+
+          // Get actual location name
+          const reverseGeocode = await Location.reverseGeocodeAsync({
+            latitude: lat,
+            longitude: lon
+          });
+
+          if (reverseGeocode.length > 0) {
+            const address = reverseGeocode[0];
+            const parts = [];
+            if (address.city) parts.push(address.city);
+            else if (address.district) parts.push(address.district);
+            else if (address.subregion) parts.push(address.subregion);
+
+            if (address.region) parts.push(address.region);
+
+            if (parts.length > 0) {
+              locationName = parts.join(', ');
+            } else if (address.name) {
+              locationName = address.name;
+            }
+          }
+        }
+
+        const data = await weatherService.getWeather(lat, lon, locationName);
+        console.log('Fetched Weather Data:', data);
+        setWeather(data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load weather data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, []);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -31,7 +111,7 @@ export default function HomeScreen() {
             <ThemedText style={styles.hello}>
               Hello, <ThemedText style={styles.helloName}>Harris</ThemedText>
             </ThemedText>
-            <ThemedText style={styles.location}>📍 Central Valley</ThemedText>
+            <ThemedText style={styles.location}>📍 {weather?.locationName || 'Detecting Location...'}</ThemedText>
           </View>
           <View style={styles.bellCircle}>
             <ThemedText style={styles.bellIcon}>🔔</ThemedText>
@@ -40,25 +120,56 @@ export default function HomeScreen() {
 
         {/* Weather Section */}
         <View style={styles.weatherCard}>
-          <View style={styles.weatherMain}>
-            <ThemedText style={styles.temperature}>32°</ThemedText>
-            <ThemedText style={styles.weatherEmoji}>🌦️</ThemedText>
-          </View>
-          <ThemedText style={styles.county}>Sonoma County</ThemedText>
+          {loading ? (
+            <ActivityIndicator size="large" color="#8B6F47" />
+          ) : error ? (
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+          ) : (
+            <>
+              <View style={styles.weatherMain}>
+                <ThemedText style={styles.temperature}>{weather?.temperature || '--°'}</ThemedText>
+                <ThemedText style={styles.weatherEmoji}>🌦️</ThemedText>
+              </View>
+              <ThemedText style={styles.county}>{weather?.locationName || '---'}</ThemedText>
 
-          {/* Weather image decoration */}
-          <View style={styles.wheatDecoration}>
-            <ThemedText style={styles.wheatEmoji}>🌾🌾🌾</ThemedText>
-          </View>
+              {/* Weather image decoration */}
+              <View style={styles.wheatDecoration}>
+                <ThemedText style={styles.wheatEmoji}>🌾🌾�</ThemedText>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Weather Stats Grid */}
         <View style={styles.statsGrid}>
-          <WeatherStatCard icon="🌡️" label="Soil temp" value="+23 C" />
-          <WeatherStatCard icon="💧" label="Humidity" value="78%" />
-          <WeatherStatCard icon="💨" label="Wind" value="7 m/s" />
-          <WeatherStatCard icon="🌧️" label="Perception" value="0 mm" />
+          <WeatherStatCard icon="🌡️" label="Outside temp" value={weather?.temperature || '--°'} />
+          <WeatherStatCard icon="💧" label="Humidity" value={weather?.humidity || '--%'} />
+          <WeatherStatCard icon="💨" label="Wind" value={weather?.windSpeed || '-- m/s'} />
+          <WeatherStatCard icon="🌧️" label="Precipitation" value={weather?.precipitation || '-- mm'} />
         </View>
+
+        {/* 7-Day Forecast Section */}
+        <ThemedView style={styles.forecastSection}>
+          <ThemedText style={styles.sectionTitle}>7-Day Forecast</ThemedText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.forecastScroll}
+          >
+            {weather?.forecast.map((day, index) => (
+              <View key={day.date} style={styles.forecastItem}>
+                <ThemedText style={styles.forecastDay}>
+                  {index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </ThemedText>
+                <ThemedText style={styles.forecastIcon}>
+                  {getWeatherIcon(day.weatherCode)}
+                </ThemedText>
+                <ThemedText style={styles.forecastTemp}>{day.maxTemp}</ThemedText>
+                <ThemedText style={styles.forecastMinTemp}>{day.minTemp}</ThemedText>
+              </View>
+            ))}
+          </ScrollView>
+        </ThemedView>
 
         {/* Commodities & Food */}
         <ThemedText style={styles.sectionTitle}>Commodities & Food</ThemedText>
@@ -86,7 +197,7 @@ export default function HomeScreen() {
               </View>
               <View>
                 <ThemedText style={styles.fieldsTitle}>My Fields</ThemedText>
-                <ThemedText style={styles.fieldsLocation}>📍 Central Valley</ThemedText>
+                <ThemedText style={styles.fieldsLocation}>📍 {weather?.locationName || '...'}</ThemedText>
               </View>
             </View>
             <View style={styles.yieldBadge}>
@@ -109,8 +220,20 @@ export default function HomeScreen() {
         {/* Spacer for bottom nav */}
         <View style={{ height: 40 }} />
       </ScrollView>
+      <BottomNav />
     </View>
   );
+}
+
+function getWeatherIcon(code: number) {
+  if (code === 0) return '☀️'; // Clear sky
+  if (code <= 3) return '🌤️'; // Mainly clear, partly cloudy, and overcast
+  if (code <= 48) return '🌫️'; // Fog
+  if (code <= 67) return '🌧️'; // Drizzle, Rain
+  if (code <= 77) return '❄️'; // Snow
+  if (code <= 82) return '🌧️'; // Rain showers
+  if (code <= 99) return '⛈️'; // Thunderstorm
+  return '☀️';
 }
 
 function WeatherStatCard({
@@ -146,7 +269,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: Platform.OS === 'ios' ? 60 : 44,
     paddingHorizontal: CARD_PADDING,
-    paddingBottom: 20,
+    paddingBottom: 110,
   },
   // Greeting
   greetingRow: {
@@ -191,6 +314,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     position: 'relative',
     overflow: 'hidden',
+    minHeight: 120,
+    justifyContent: 'center',
   },
   weatherMain: {
     flexDirection: 'row',
@@ -266,8 +391,6 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 14,
   },
-<<<<<<< Updated upstream
-=======
   // Forecast Section
   forecastSection: {
     marginBottom: 24,
@@ -304,7 +427,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#aaa',
   },
->>>>>>> Stashed changes
   // Commodities
   commoditiesRow: {
     gap: 16,
@@ -396,5 +518,10 @@ const styles = StyleSheet.create({
   fieldImage: {
     width: '100%',
     height: '100%',
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
