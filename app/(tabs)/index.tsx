@@ -266,6 +266,45 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 14,
   },
+<<<<<<< Updated upstream
+=======
+  // Forecast Section
+  forecastSection: {
+    marginBottom: 24,
+    paddingHorizontal: 16,       // add side padding for section
+    paddingVertical: 8,          // add vertical breathing room
+  },
+  forecastScroll: {
+    gap: 12,
+    paddingHorizontal: 8,        // ensure content isn't flush to edges when scrolling
+  },
+  forecastItem: {
+    alignItems: 'center',
+    backgroundColor: '#fff9f0',
+    padding: 16,                 // increase padding for better touch targets
+    borderRadius: 16,
+    minWidth: 80,                // slightly wider cards for readability
+    marginHorizontal: 4,         // tiny gap between items in addition to gap
+  },
+  forecastDay: {
+    fontSize: 10,
+    color: '#999',
+    marginBottom: 6,             // give more space below the day label
+  },
+  forecastIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  forecastTemp: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#333',
+  },
+  forecastMinTemp: {
+    fontSize: 10,
+    color: '#aaa',
+  },
+>>>>>>> Stashed changes
   // Commodities
   commoditiesRow: {
     gap: 16,
