@@ -1,10 +1,76 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
+import * as Location from 'expo-location';
 
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { weatherService } from '@/services/api';
+
+interface ForecastDay {
+  date: string;
+  maxTemp: string;
+  minTemp: string;
+  weatherCode: number;
+}
+
+interface WeatherData {
+  locationName: string;
+  temperature: string;
+  humidity: string;
+  windSpeed: string;
+  precipitation: string;
+  forecast: ForecastDay[];
+}
 
 export default function HomeScreen() {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        setLoading(true);
+
+        let { status } = await Location.requestForegroundPermissionsAsync();
+
+        let lat: number | undefined;
+        let lon: number | undefined;
+        let locationName: string | undefined;
+
+        if (status === 'granted') {
+          const location = await Location.getCurrentPositionAsync({});
+          lat = location.coords.latitude;
+          lon = location.coords.longitude;
+
+          // Get actual location name
+          const reverseGeocode = await Location.reverseGeocodeAsync({
+            latitude: lat,
+            longitude: lon
+          });
+
+          if (reverseGeocode.length > 0) {
+            const address = reverseGeocode[0];
+            locationName = address.city || address.region || address.name || undefined;
+          }
+        }
+
+        const data = await weatherService.getWeather(lat, lon, locationName);
+        console.log('Fetched Weather Data:', data);
+        setWeather(data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load weather data');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, []);
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#f5e6d3', dark: '#1a3d0a' }}
@@ -32,26 +98,53 @@ export default function HomeScreen() {
         </View>
 
         {/* Location */}
-        <ThemedText style={styles.location}>📍 Central Valley</ThemedText>
+        <ThemedText style={styles.location}>📍 {weather?.locationName || 'Detecting Location...'}</ThemedText>
 
         {/* Weather Card */}
         <ThemedView style={styles.weatherCard}>
-          <View style={styles.weatherLeft}>
-            <ThemedText style={styles.temperature}>32°</ThemedText>
-            <ThemedText style={styles.weatherLocation}>Sonoma County</ThemedText>
-          </View>
-          <View style={styles.weatherRight}>
-            <ThemedText style={styles.weatherIcon}>🌤️</ThemedText>
-          </View>
+          {loading ? (
+            <ActivityIndicator size="large" color="#8B6F47" />
+          ) : error ? (
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+          ) : (
+            <>
+              <View style={styles.weatherLeft}>
+                <ThemedText style={styles.temperature}>{weather?.temperature || '--°'}</ThemedText>
+                <ThemedText style={styles.weatherLocation}>{weather?.locationName || '---'}</ThemedText>
+              </View>
+              <View style={styles.weatherRight}>
+                <ThemedText style={styles.weatherIcon}>🌤️</ThemedText>
+              </View>
+            </>
+          )}
         </ThemedView>
 
         {/* Weather Stats */}
         <View style={styles.weatherStatsContainer}>
-          <WeatherStat icon="🌡️" label="Soil temp" value="+23 C" />
-          <WeatherStat icon="💧" label="Humidity" value="78%" />
-          <WeatherStat icon="💨" label="Wind" value="7 m/s" />
-          <WeatherStat icon="📍" label="Perception" value="0 mm" />
+          <WeatherStat icon="🌡️" label="Outside temp" value={weather?.temperature || '--°'} />
+          <WeatherStat icon="💧" label="Humidity" value={weather?.humidity || '--%'} />
+          <WeatherStat icon="💨" label="Wind" value={weather?.windSpeed || '-- m/s'} />
+          <WeatherStat icon="📍" label="Precipitation" value={weather?.precipitation || '-- mm'} />
         </View>
+
+        {/* 7-Day Forecast Section */}
+        <ThemedView style={styles.forecastSection}>
+          <ThemedText style={styles.sectionTitle}>7-Day Forecast</ThemedText>
+          <View style={styles.forecastScroll}>
+            {weather?.forecast.map((day, index) => (
+              <View key={day.date} style={styles.forecastItem}>
+                <ThemedText style={styles.forecastDay}>
+                  {index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </ThemedText>
+                <ThemedText style={styles.forecastIcon}>
+                  {getWeatherIcon(day.weatherCode)}
+                </ThemedText>
+                <ThemedText style={styles.forecastTemp}>{day.maxTemp}</ThemedText>
+                <ThemedText style={styles.forecastMinTemp}>{day.minTemp}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </ThemedView>
 
         {/* Commodities Section */}
         <ThemedView style={styles.commoditiesSection}>
@@ -69,7 +162,7 @@ export default function HomeScreen() {
         <ThemedView style={styles.fieldsSection}>
           <ThemedText style={styles.fieldName}>My Fields</ThemedText>
           <View style={styles.fieldLocation}>
-            <ThemedText style={styles.fieldLocationText}>📍 Central Valley</ThemedText>
+            <ThemedText style={styles.fieldLocationText}>📍 {weather?.locationName || '...'}</ThemedText>
             <ThemedText style={styles.fieldYield}>🌾 7200 kg/ha</ThemedText>
           </View>
           <View style={styles.fieldImage}>
@@ -113,7 +206,7 @@ export default function HomeScreen() {
         {/* Farmer's Tasks */}
         <ThemedView style={styles.farmerTasks}>
           <View style={styles.tasksButtonsRow}>
-            <TouchableOpacity style={styles.taskButton} onPress={() => {}}>
+            <TouchableOpacity style={styles.taskButton} onPress={() => { }}>
               <ThemedText style={styles.taskButtonText}>Today Task</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.taskButtonInactive}>
@@ -125,17 +218,17 @@ export default function HomeScreen() {
           </View>
 
           {/* Task Items */}
-          <TaskItem 
+          <TaskItem
             icon="🧑‍🌾"
-            title="Morning Field Inspection" 
+            title="Morning Field Inspection"
             description="Assess crop health, identify issues."
             image="🌾"
             deadline="Today, 10 AM"
             priority="High Priority"
           />
-          <TaskItem 
+          <TaskItem
             icon="🧑‍🌾"
-            title="Soil Moisture Monitoring" 
+            title="Soil Moisture Monitoring"
             description="Monitor plant water..."
             image="🌱"
             deadline="Today"
@@ -145,6 +238,17 @@ export default function HomeScreen() {
       </ThemedView>
     </ParallaxScrollView>
   );
+}
+
+function getWeatherIcon(code: number) {
+  if (code === 0) return '☀️'; // Clear sky
+  if (code <= 3) return '🌤️'; // Mainly clear, partly cloudy, and overcast
+  if (code <= 48) return '🌫️'; // Fog
+  if (code <= 67) return '🌧️'; // Drizzle, Rain
+  if (code <= 77) return '❄️'; // Snow
+  if (code <= 82) return '🌧️'; // Rain showers
+  if (code <= 99) return '⛈️'; // Thunderstorm
+  return '☀️';
 }
 
 interface WeatherStatProps {
@@ -563,5 +667,44 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#2d5016',
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  forecastSection: {
+    marginBottom: 20,
+    paddingHorizontal: 0,
+  },
+  forecastScroll: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  forecastItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  forecastDay: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 4,
+  },
+  forecastIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  forecastTemp: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  forecastMinTemp: {
+    fontSize: 10,
+    color: '#999',
   },
 });
