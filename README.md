@@ -1,50 +1,61 @@
-# Welcome to your Expo app 👋
+# Farmer Assist
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Minimal README: development, build, and deployment steps for the web frontend.
 
-## Get started
+Prerequisites
+- Node.js and npm installed
+- AWS CLI configured (credentials + region)
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Quick start (development)
 
 ```bash
-npm run reset-project
+npm install
+npx expo start --web
+# or `npm run web`
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+TypeScript check
 
-## Learn more
+```bash
+npx tsc --noEmit
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Build (static web export)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+# export static web assets to `dist/`
+npm run export:web
 
-## Join the community
+# production build (uses production backend URL)
+npm run build:prod
+```
 
-Join our community of developers creating universal apps.
+Deploy to S3 and invalidate CloudFront
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+# sync `dist/` to S3 (bucket used in this project)
+npm run deploy:prod
+
+# invalidate CloudFront distribution (example uses env var CF_DIST_ID)
+# replace CF_DIST_ID or export it in your shell
+export CF_DIST_ID=EBHMONH5OTIXZ
+npm run invalidate:cloudfront
+# OR directly with AWS CLI:
+aws cloudfront create-invalidation --distribution-id EBHMONH5OTIXZ --paths '/*'
+```
+
+Deployment details
+- S3 bucket used: `farmer-assist-app`
+- Frontend CloudFront distribution: `EBHMONH5OTIXZ` (domain: `d1nn0a67vqzk27.cloudfront.net`)
+- Frontend public URL: https://d1nn0a67vqzk27.cloudfront.net
+
+Backend (production) URL configured for builds
+- https://d193g30q9y2nj2.cloudfront.net
+
+Useful package.json scripts
+- `npm run export:web` — export static web to `dist/`
+- `npm run build:prod` — production export (sets production backend URL)
+- `npm run deploy:prod` — sync `dist/` to `s3://farmer-assist-app`
+- `npm run invalidate:cloudfront` — runs invalidation (requires `CF_DIST_ID` env var)
+
+If you want, I can add a small GitHub Actions workflow to automate build + deploy.
