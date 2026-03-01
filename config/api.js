@@ -9,7 +9,7 @@ const env = require('./environment');
 const API_BASE_URLS = {
   development: 'http://localhost:3000/api/v1',
   staging: process.env.REACT_APP_API_URL || 'https://staging-api.farmerassist.com/api/v1',
-  production: process.env.REACT_APP_API_URL || 'https://api.farmerassist.com/api/v1'
+  production: process.env.REACT_APP_API_URL || 'https://d193g30q9y2nj2.cloudfront.net/api/v1'
 };
 
 module.exports = {
