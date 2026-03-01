@@ -20,7 +20,7 @@ export default function LandingScreen() {
         {/* Brand header */}
         <View style={styles.header}>
           <ThemedText style={styles.headerIcon}>🌱</ThemedText>
-          <ThemedText style={styles.headerTitle}>EcoFarm</ThemedText>
+          <ThemedText style={styles.headerTitle}>Farmer Assist</ThemedText>
         </View>
 
         {/* Welcome title */}
