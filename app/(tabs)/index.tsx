@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View, Alert, Dimensions, Platform, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, ScrollView, ActivityIndicator, Dimensions, StyleSheet, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { weatherService } from '@/services/api';
+import BottomNav from '@/components/ui/bottom-nav';
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 16;
@@ -219,6 +220,7 @@ export default function HomeScreen() {
         {/* Spacer for bottom nav */}
         <View style={{ height: 40 }} />
       </ScrollView>
+      <BottomNav />
     </View>
   );
 }
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: Platform.OS === 'ios' ? 60 : 44,
     paddingHorizontal: CARD_PADDING,
-    paddingBottom: 20,
+    paddingBottom: 110,
   },
   // Greeting
   greetingRow: {
@@ -392,21 +394,25 @@ const styles = StyleSheet.create({
   // Forecast Section
   forecastSection: {
     marginBottom: 24,
+    paddingHorizontal: 16,       // add side padding for section
+    paddingVertical: 8,          // add vertical breathing room
   },
   forecastScroll: {
     gap: 12,
+    paddingHorizontal: 8,        // ensure content isn't flush to edges when scrolling
   },
   forecastItem: {
     alignItems: 'center',
     backgroundColor: '#fff9f0',
-    padding: 12,
+    padding: 16,                 // increase padding for better touch targets
     borderRadius: 16,
-    minWidth: 70,
+    minWidth: 80,                // slightly wider cards for readability
+    marginHorizontal: 4,         // tiny gap between items in addition to gap
   },
   forecastDay: {
     fontSize: 10,
     color: '#999',
-    marginBottom: 4,
+    marginBottom: 6,             // give more space below the day label
   },
   forecastIcon: {
     fontSize: 24,

@@ -20,6 +20,8 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'mic.fill': 'mic',
   'person.fill': 'person',
+  'speaker.wave.2.fill': 'volume_up',
+  'magnifyingglass': 'search',
 } as IconMapping;
 
 /**
