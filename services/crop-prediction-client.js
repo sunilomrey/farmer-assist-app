@@ -19,9 +19,8 @@ export class CropPredictionService {
     /**
      * Get prediction for a single crop
      */
-    async analyzeCrop(cropType, lat, lon, locationName = null) {
+    async analyzeCrop(cropType, lat, lon, locationName = undefined) {
         try {
-            console.log('📡 CropPredictionService.analyzeCrop called');
             const queryParams = new URLSearchParams({
                 cropType,
                 lat: lat.toString(),
@@ -30,12 +29,9 @@ export class CropPredictionService {
             });
 
             const url = `${this.baseURL}/crop-prediction/analyze?${queryParams}`;
-            console.log('🔗 Fetching from:', url);
 
             const response = await fetch(url, { method: 'GET' });
-            
-            console.log('📥 Response status:', response.status);
-            
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('❌ Response error:', errorText);
@@ -43,7 +39,6 @@ export class CropPredictionService {
             }
 
             const data = await response.json();
-            console.log('✅ Response data:', data);
             return data;
         } catch (error) {
             console.error('❌ Error in analyzeCrop:', error);
@@ -54,17 +49,12 @@ export class CropPredictionService {
     /**
      * Compare multiple crops
      */
-    async compareCrops(crops, lat, lon, locationName = null) {
+    async compareCrops(crops, lat, lon, locationName = undefined) {
         try {
-            console.log('📡 CropPredictionService.compareCrops called');
-            console.log('Comparing crops:', crops);
-            
             const payload = { crops, lat, lon };
             if (locationName) payload.locationName = locationName;
-            
+
             const url = `${this.baseURL}/crop-prediction/compare`;
-            console.log('🔗 Posting to:', url);
-            console.log('📦 Payload:', payload);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -72,8 +62,6 @@ export class CropPredictionService {
                 body: JSON.stringify(payload)
             });
 
-            console.log('📥 Response status:', response.status);
-            
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('❌ Response error:', errorText);
@@ -81,7 +69,6 @@ export class CropPredictionService {
             }
 
             const data = await response.json();
-            console.log('✅ Comparison result:', data);
             return data;
         } catch (error) {
             console.error('❌ Error in compareCrops:', error);
@@ -92,17 +79,12 @@ export class CropPredictionService {
     /**
      * Get crop recommendation
      */
-    async getRecommendedCrop(availableCrops, lat, lon, locationName = null) {
+    async getRecommendedCrop(availableCrops, lat, lon, locationName = undefined) {
         try {
-            console.log('📡 CropPredictionService.getRecommendedCrop called');
-            console.log('Available crops:', availableCrops);
-            
             const payload = { availableCrops, lat, lon };
             if (locationName) payload.locationName = locationName;
-            
+
             const url = `${this.baseURL}/crop-prediction/recommend`;
-            console.log('🔗 Posting to:', url);
-            console.log('📦 Payload:', payload);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -110,8 +92,6 @@ export class CropPredictionService {
                 body: JSON.stringify(payload)
             });
 
-            console.log('📥 Response status:', response.status);
-            
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('❌ Response error:', errorText);
@@ -119,7 +99,6 @@ export class CropPredictionService {
             }
 
             const data = await response.json();
-            console.log('✅ Recommendation result:', data);
             return data;
         } catch (error) {
             console.error('❌ Error in getRecommendedCrop:', error);
@@ -130,7 +109,7 @@ export class CropPredictionService {
     /**
      * Get advanced prediction with historical data
      */
-    async getAdvancedPrediction(cropType, lat, lon, historicalData = null, locationName = null) {
+    async getAdvancedPrediction(cropType, lat, lon, historicalData = undefined, locationName = undefined) {
         try {
             const response = await fetch(
                 `${this.baseURL}/crop-prediction/advanced`,

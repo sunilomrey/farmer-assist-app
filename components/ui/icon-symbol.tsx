@@ -20,9 +20,11 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'mic.fill': 'mic',
   'person.fill': 'person',
-  'speaker.wave.2.fill': 'volume_up',
+  'speaker.wave.2.fill': 'volume-up',
   'magnifyingglass': 'search',
-} as IconMapping;
+  'leaf.fill': 'eco',
+  'circle.fill': 'circle',
+} as Partial<IconMapping>;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

@@ -2,11 +2,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import config from '@/config';
 
 const { width } = Dimensions.get('window');
-
-const WHEAT_IMAGE_URL =
-  'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&q=80';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -49,7 +47,7 @@ export default function LandingScreen() {
       {/* Bottom image section */}
       <View style={styles.imageSection}>
         <Image
-          source={{ uri: WHEAT_IMAGE_URL }}
+          source={{ uri: config.app.ASSETS.IMAGES.WHEAT_HIGH }}
           style={styles.backgroundImage}
           contentFit="cover"
           transition={300}

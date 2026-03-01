@@ -1,233 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
-import * as Location from 'expo-location';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CropPredictionService } from '@/services/crop-prediction-client';
-
-const BACKEND_URL = 'http://localhost:3000/api/v1'; // Change for production
+import config from '@/config';
+import { useWeather } from '@/hooks/useWeather';
 
 export default function CropPredictionScreen() {
+  const { weather, location } = useWeather();
   const [cropType, setCropType] = useState('wheat');
-  const [location, setLocation] = useState(null);
   const [locationName, setLocationName] = useState('Detecting Location...');
-  const [temperature, setTemperature] = useState(null);
-  const [humidity, setHumidity] = useState(null);
-  const [prediction, setPrediction] = useState(null);
+  const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = useState('single'); // single, compare, recommend
 
-  const cropService = new CropPredictionService(BACKEND_URL);
-  const commonCrops = ['wheat', 'rice', 'cotton', 'corn', 'potato', 'tomato', 'onion'];
-  const compareCrops = ['wheat', 'rice', 'cotton'];
-  const recommendCrops = ['wheat', 'rice', 'corn', 'potato', 'cotton', 'sugarcane'];
+  const temperature = weather?.temperature || null;
+  const humidity = weather?.humidity || null;
 
-  // Get user location on mount
   useEffect(() => {
-    getLocation();
-  }, []);
-
-  const getLocation = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      let coords;
-      
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({});
-        coords = loc.coords;
-        setLocation(coords);
-        console.log('📍 Location detected:', coords);
-      } else {
-        // Default to Bengaluru if permission denied
-        coords = { latitude: 12.9716, longitude: 77.5946 };
-        setLocation(coords);
-        console.log('📍 Location permission denied, using default');
-      }
-
-      // Fetch weather data from backend to get location name and temperature
-      try {
-        console.log('🌤️ Fetching weather data from:', `${BACKEND_URL}/weather?lat=${coords.latitude}&lon=${coords.longitude}`);
-        const response = await fetch(
-          `${BACKEND_URL}/weather?lat=${coords.latitude}&lon=${coords.longitude}`
-        );
-        
-        console.log('📥 Weather API response status:', response.status);
-        
-        if (response.ok) {
-          const weatherData = await response.json();
-          console.log('✅ Full Weather data:', JSON.stringify(weatherData, null, 2));
-          console.log('📍 Location name:', weatherData.locationName);
-          console.log('🌡️ Temperature:', weatherData.temperature);
-          console.log('💧 Humidity:', weatherData.humidity);
-          
-          if (weatherData.locationName) {
-            setLocationName(weatherData.locationName);
-            console.log('✅ Location name set to:', weatherData.locationName);
-          } else {
-            console.warn('⚠️ locationName not found in response');
-            // Try to construct from address if available
-            if (weatherData.address) {
-              const city = weatherData.address.city || weatherData.address.town || weatherData.address.village || 'Current Location';
-              setLocationName(city);
-            } else {
-              setLocationName('Current Location');
-            }
-          }
-          
-          setTemperature(weatherData.temperature);
-          setHumidity(weatherData.humidity);
-        } else {
-          const errorText = await response.text();
-          console.error('❌ Weather API error response:', errorText);
-          setLocationName('Current Location');
-        }
-      } catch (weatherErr) {
-        console.error('❌ Failed to fetch weather data:', weatherErr);
-        console.error('Error details:', weatherErr.message);
-        setLocationName('Current Location');
-      }
-    } catch (err) {
-      console.error('Location error:', err);
-      // Default fallback
-      setLocation({ latitude: 12.9716, longitude: 77.5946 });
-      setLocationName('Bengaluru, India');
+    if (weather?.locationName) {
+      setLocationName(weather.locationName);
     }
-  };
+  }, [weather?.locationName]);
+
+  const cropService = new CropPredictionService(config.api.BASE_URL);
+  const commonCrops = config.app.CROPS.COMMON;
+  const compareCrops = config.app.CROPS.COMPARISON_SET;
+  const recommendCrops = config.app.CROPS.RECOMMENDATION_SET;
 
   const handleAnalyzeCrop = async () => {
-    console.log('🔵 handleAnalyzeCrop called');
-    console.log('Location:', location);
-    console.log('Crop type:', cropType);
-    console.log('Backend URL:', BACKEND_URL);
-
     if (!location) {
-      console.log('❌ No location available');
       Alert.alert('Error', 'Could not get location');
       return;
     }
 
-    console.log('📍 Starting crop analysis...');
     setLoading(true);
     setError(null);
     setPrediction(null);
 
     try {
-      console.log('🚀 Calling cropService.analyzeCrop');
       const result = await cropService.analyzeCrop(
         cropType,
         location.latitude,
         location.longitude,
-        'Your Location'
+        locationName as any
       );
-      console.log('✅ Got result:', result);
-      
+
       // Update location name from API response
       if (result.location) {
         setLocationName(result.location);
-        console.log('📍 Location updated to:', result.location);
       }
-      
+
       setPrediction(result.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Error in handleAnalyzeCrop:', err);
-      console.error('Error message:', err.message);
-      console.error('Error stack:', err.stack);
       setError(err.message);
       Alert.alert('Error', `Failed to analyze crop: ${err.message}`);
     } finally {
-      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
 
   const handleCompareCrops = async () => {
-    console.log('🔵 handleCompareCrops called');
-    console.log('Location:', location);
-    
     if (!location) {
-      console.log('❌ No location available');
       Alert.alert('Error', 'Could not get location');
       return;
     }
 
-    console.log('📍 Starting crop comparison...');
     setLoading(true);
     setError(null);
     setPrediction(null);
 
     try {
-      console.log('🚀 Calling cropService.compareCrops');
       const result = await cropService.compareCrops(
         compareCrops,
         location.latitude,
         location.longitude,
-        'Your Location'
+        locationName as any
       );
-      console.log('✅ Got comparison result:', result);
-      
+
       // Update location name from API response
       if (result.location) {
         setLocationName(result.location);
-        console.log('📍 Location updated to:', result.location);
       }
-      
+
       setPrediction({
         comparison: true,
         location: result.location || 'Unknown',
         predictions: result.data ? result.data.predictions : result.predictions || []
-      });
-    } catch (err) {
+      } as any);
+    } catch (err: any) {
       console.error('❌ Error in handleCompareCrops:', err);
       setError(err.message);
       Alert.alert('Error', `Failed to compare crops: ${err.message}`);
     } finally {
-      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
 
   const handleGetRecommendation = async () => {
-    console.log('🔵 handleGetRecommendation called');
-    console.log('Location:', location);
-    
     if (!location) {
-      console.log('❌ No location available');
       Alert.alert('Error', 'Could not get location');
       return;
     }
 
-    console.log('📍 Starting crop recommendation...');
     setLoading(true);
     setError(null);
     setPrediction(null);
 
     try {
-      console.log('🚀 Calling cropService.getRecommendedCrop');
       const result = await cropService.getRecommendedCrop(
         recommendCrops,
         location.latitude,
         location.longitude,
-        'Your Location'
+        locationName as any
       );
-      console.log('✅ Got recommendation result:', result);
-      
+
       // Update location name from API response
       if (result.location) {
         setLocationName(result.location);
-        console.log('📍 Location updated to:', result.location);
       }
-      
+
       setPrediction({
         recommendation: true,
         location: result.location || 'Unknown',
         bestCrop: result.data ? result.data.bestCrop : result.recommendation?.bestCrop,
         allCrops: result.data ? result.data.allAnalyses : result.recommendation?.allAnalyses || []
-      });
-    } catch (err) {
+      } as any);
+    } catch (err: any) {
       console.error('❌ Error in handleGetRecommendation:', err);
       setError(err.message);
       Alert.alert('Error', `Failed to get recommendation: ${err.message}`);
     } finally {
-      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };
@@ -237,7 +140,7 @@ export default function CropPredictionScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>🌾 Crop Prediction</Text>
-        <Text style={styles.subtitle}>AI-powered crop analysis powered by AWS Bedrock</Text>
+        <Text style={styles.subtitle}>AI-powered crop analysis</Text>
       </View>
 
       {/* Location Info */}
@@ -316,7 +219,7 @@ export default function CropPredictionScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          
+
           <TouchableOpacity
             style={styles.analyzeButton}
             onPress={handleAnalyzeCrop}
@@ -340,7 +243,7 @@ export default function CropPredictionScreen() {
               Wheat • Rice • Cotton
             </Text>
           </View>
-          
+
           <TouchableOpacity
             style={styles.analyzeButton}
             onPress={handleCompareCrops}
@@ -364,7 +267,7 @@ export default function CropPredictionScreen() {
               Analysis {recommendCrops.length} crops
             </Text>
           </View>
-          
+
           <TouchableOpacity
             style={styles.analyzeButton}
             onPress={handleGetRecommendation}
@@ -389,7 +292,7 @@ export default function CropPredictionScreen() {
           </View>
 
           <Text style={styles.sectionTitle}>Results</Text>
-          
+
           {/* Single Crop Result */}
           {!prediction.comparison && !prediction.recommendation && (
             <SingleCropResult prediction={prediction} />
@@ -423,28 +326,13 @@ export default function CropPredictionScreen() {
         </View>
       )}
 
-      {/* Instructions */}
-      {!prediction && !loading && (
-        <View style={styles.instructionCard}>
-          <Text style={styles.instructionTitle}>⚙️ Setup Required</Text>
-          <Text style={styles.instructionText}>
-            1. Start backend: npm run dev{'\n'}
-            2. Configure AWS credentials in .env{'\n'}
-            3. Update BACKEND_URL in this file{'\n'}
-            4. Press "Analyze" button
-          </Text>
-        </View>
-      )}
 
-      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
 
 // Single Crop Result Component
-function SingleCropResult({ prediction }) {
-  // Add detailed logging
-  console.log('SingleCropResult received:', JSON.stringify(prediction, null, 2));
+function SingleCropResult({ prediction }: { prediction: any }) {
 
   if (!prediction) {
     return (
@@ -470,7 +358,7 @@ function SingleCropResult({ prediction }) {
   const healthScore = analysis.cropHealth?.score || 65;
   const healthOverall = analysis.cropHealth?.overall || 'fair';
   const healthReasoning = analysis.cropHealth?.reasoning || 'Crop analysis generated from AI model';
-  
+
   const healthColor = healthScore >= 70 ? '#4caf50' : healthScore >= 50 ? '#ffc107' : '#f44336';
 
   return (
@@ -517,7 +405,7 @@ function SingleCropResult({ prediction }) {
       {analysis.recommendations && (
         <View style={styles.resultCard}>
           <Text style={styles.cardTitle}>💡 Recommendations</Text>
-          {analysis.recommendations.slice(0, 3).map((rec, idx) => (
+          {analysis.recommendations.slice(0, 3).map((rec: string, idx: number) => (
             <Text key={idx} style={styles.recommendation}>
               ✓ {rec}
             </Text>
@@ -529,7 +417,7 @@ function SingleCropResult({ prediction }) {
       {analysis.riskFactors && analysis.riskFactors.length > 0 && (
         <View style={styles.resultCard}>
           <Text style={styles.cardTitle}>⚠️ Risk Factors</Text>
-          {analysis.riskFactors.slice(0, 2).map((risk, idx) => (
+          {analysis.riskFactors.slice(0, 2).map((risk: any, idx: number) => (
             <View key={idx} style={styles.riskItem}>
               <Text style={[styles.riskName, { color: getRiskColor(risk.severity) }]}>
                 {risk.risk}
@@ -553,7 +441,7 @@ function SingleCropResult({ prediction }) {
 }
 
 // Compare Result Component - Table Format
-function CompareResult({ predictions }) {
+function CompareResult({ predictions }: { predictions: any[] }) {
   if (!predictions || predictions.length === 0) {
     return <Text style={styles.errorText}>No comparison data available</Text>;
   }
@@ -589,7 +477,7 @@ function CompareResult({ predictions }) {
         const cropHealth = p.analysis.cropHealth || {};
         const harvestPred = p.analysis.harvestPrediction || {};
         const riskCount = (p.analysis.riskFactors || []).length;
-        const highRisks = (p.analysis.riskFactors || []).filter(r => r.severity === 'high').length;
+        const highRisks = (p.analysis.riskFactors || []).filter((r: any) => r.severity === 'high').length;
 
         return (
           <View key={idx} style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}>
@@ -639,7 +527,7 @@ function CompareResult({ predictions }) {
 }
 
 // Helper to get status color
-function getStatusColor(status) {
+function getStatusColor(status: string) {
   switch (status?.toLowerCase()) {
     case 'excellent':
       return { color: '#1b5e20' };
@@ -654,9 +542,8 @@ function getStatusColor(status) {
   }
 }
 
-// Recommend Result Component
 // Recommend Result Component - Rankings Table
-function RecommendResult({ bestCrop, allCrops }) {
+function RecommendResult({ bestCrop, allCrops }: { bestCrop: any; allCrops: any[] }) {
   if (!bestCrop || !allCrops) {
     return <Text style={styles.errorText}>No recommendation data available</Text>;
   }
@@ -756,7 +643,7 @@ function RecommendResult({ bestCrop, allCrops }) {
 }
 
 // Helper Components
-function TabButton({ label, active, onPress }) {
+function TabButton({ label, active, onPress }: { label: string, active: boolean, onPress: () => void }) {
   return (
     <TouchableOpacity
       style={[styles.tabButton, active && styles.tabButtonActive]}
@@ -769,7 +656,7 @@ function TabButton({ label, active, onPress }) {
   );
 }
 
-function InfoRow({ label, value }) {
+function InfoRow({ label, value }: { label: string, value: string | number }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -778,7 +665,7 @@ function InfoRow({ label, value }) {
   );
 }
 
-function getRiskColor(severity) {
+function getRiskColor(severity: string) {
   switch (severity) {
     case 'high': return '#f44336';
     case 'medium': return '#ffc107';
@@ -808,28 +695,26 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   locationCard: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: '#fff9f0',
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196f3',
   },
   locationTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1565c0',
+    fontWeight: '700',
+    color: '#8B6F47',
     marginBottom: 6,
   },
   locationName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#1976d2',
+    color: '#333',
     marginBottom: 4,
   },
   locationCoords: {
     fontSize: 11,
-    color: '#666',
+    color: '#999',
     fontFamily: 'monospace',
   },
   weatherRow: {
@@ -848,12 +733,12 @@ const styles = StyleSheet.create({
   weatherValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1976d2',
+    color: '#333',
   },
   locationText: {
     fontSize: 13,
-    color: '#1976d2',
-    fontWeight: '500',
+    color: '#C8A96E',
+    fontWeight: '600',
   },
   tabs: {
     flexDirection: 'row',
@@ -862,20 +747,20 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: 16,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
   },
   tabButtonActive: {
-    backgroundColor: '#4caf50',
-    borderColor: '#4caf50',
+    backgroundColor: '#C8A96E',
+    borderColor: '#C8A96E',
   },
   tabButtonText: {
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#666',
   },
@@ -898,24 +783,37 @@ const styles = StyleSheet.create({
   },
   cropButton: {
     width: '30%',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 16,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
   },
   cropButtonActive: {
-    backgroundColor: '#4caf50',
-    borderColor: '#4caf50',
+    backgroundColor: '#C8A96E',
+    borderColor: '#C8A96E',
   },
   cropButtonText: {
     textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
     color: '#666',
+    fontWeight: '500',
   },
   cropButtonTextActive: {
     color: '#fff',
+    fontWeight: '700',
+  },
+  actionButton: {
+    backgroundColor: '#8B6F47',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#8B6F47',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   compareInfo: {
     backgroundColor: '#fff',
@@ -954,31 +852,38 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resultLocationCard: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196f3',
+    backgroundColor: '#fff9f0',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   resultLocationTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#1565c0',
-    marginBottom: 4,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#8B6F47',
+    marginBottom: 6,
   },
   resultLocationName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1976d2',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#333',
+    marginBottom: 4,
   },
   resultCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cropName: {
     fontSize: 20,
@@ -998,9 +903,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 16,
+    borderWidth: 4,
+    borderColor: '#f0ead8',
   },
   scoreText: {
     fontSize: 28,
@@ -1092,35 +1000,40 @@ const styles = StyleSheet.create({
     color: '#2196f3',
   },
   bestCropCard: {
-    backgroundColor: '#e8f5e9',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: '#fff9f0',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#4caf50',
+    borderLeftColor: '#C8A96E',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   badge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2e7d32',
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#8B6F47',
     marginBottom: 6,
   },
   bestCropName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1b5e20',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#333',
     marginBottom: 4,
   },
   bestCropScore: {
-    fontSize: 12,
-    color: '#4caf50',
-    fontWeight: '600',
+    fontSize: 14,
+    color: '#C8A96E',
+    fontWeight: '700',
     marginBottom: 8,
   },
   topRec: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#2e7d32',
+    color: '#8B6F47',
   },
   rankItem: {
     flexDirection: 'row',
@@ -1221,17 +1134,22 @@ const styles = StyleSheet.create({
   // Table Styles
   tableContainer: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f5f5f5',
     borderBottomWidth: 2,
-    borderBottomColor: '#2196f3',
+    borderBottomColor: '#C8A96E',
   },
   tableRow: {
     flexDirection: 'row',
@@ -1278,21 +1196,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   compareSummary: {
-    backgroundColor: '#e3f2fd',
-    padding: 12,
+    backgroundColor: '#fff9f0',
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#2196f3',
+    borderTopColor: '#C8A96E',
   },
   summaryTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1565c0',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#8B6F47',
     marginBottom: 8,
   },
   summaryText: {
-    fontSize: 11,
-    color: '#1565c0',
+    fontSize: 13,
+    color: '#333',
     marginBottom: 4,
     paddingLeft: 8,
+    fontWeight: '500',
   },
 });

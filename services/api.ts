@@ -1,7 +1,8 @@
 import axios from 'axios';
+import config from '@/config';
 
-// Ensure this matches where your backend is running
-const BASE_URL = 'http://localhost:3000/api/v1';
+// Use centralized config for base URL
+const BASE_URL = config.api.BASE_URL;
 
 // MOCK JWT TOKEN for testing (should be retrieved from secure storage in production)
 const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjMiLCJuYW1lIjoiVGVzdCBGYXJtZXIiLCJpYXQiOjE3NzIyOTYyMTIsImV4cCI6MTc3MjI5OTgxMn0.7JaCsIOX0AsOAsINu1nxZhNvl6jn3so-Gy8DYh2pfcg';
@@ -30,9 +31,8 @@ export const weatherService = {
             const params: any = lat && lon ? { lat, lon } : {};
             if (locationName) params.locationName = locationName;
             const response = await apiClient.get('/weather', { params });
-            return response.data.data;
+            return response.data;
         } catch (error) {
-            console.error('Error fetching weather:', error);
             throw error;
         }
     },

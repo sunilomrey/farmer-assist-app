@@ -5,14 +5,11 @@ import { Image } from 'expo-image';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { weatherService } from '@/services/api';
-import BottomNav from '@/components/ui/bottom-nav';
+import { useWeather } from '@/hooks/useWeather';
+import config from '@/config';
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 16;
-
-const WHEAT_IMAGE =
-  'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&q=80';
 
 const COMMODITIES = [
   { emoji: '🌾', label: 'Rice' },
@@ -40,63 +37,7 @@ interface WeatherData {
 }
 
 export default function HomeScreen() {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        setLoading(true);
-
-        let { status } = await Location.requestForegroundPermissionsAsync();
-
-        let lat: number | undefined;
-        let lon: number | undefined;
-        let locationName: string | undefined;
-
-        if (status === 'granted') {
-          const location = await Location.getCurrentPositionAsync({});
-          lat = location.coords.latitude;
-          lon = location.coords.longitude;
-
-          // Get actual location name
-          const reverseGeocode = await Location.reverseGeocodeAsync({
-            latitude: lat,
-            longitude: lon
-          });
-
-          if (reverseGeocode.length > 0) {
-            const address = reverseGeocode[0];
-            const parts = [];
-            if (address.city) parts.push(address.city);
-            else if (address.district) parts.push(address.district);
-            else if (address.subregion) parts.push(address.subregion);
-
-            if (address.region) parts.push(address.region);
-
-            if (parts.length > 0) {
-              locationName = parts.join(', ');
-            } else if (address.name) {
-              locationName = address.name;
-            }
-          }
-        }
-
-        const data = await weatherService.getWeather(lat, lon, locationName);
-        console.log('Fetched Weather Data:', data);
-        setWeather(data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load weather data');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeather();
-  }, []);
+  const { weather, loading, error } = useWeather();
 
   return (
     <View style={styles.container}>
@@ -156,7 +97,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.forecastScroll}
           >
-            {weather?.forecast.map((day, index) => (
+            {weather?.forecast?.map((day, index) => (
               <View key={day.date} style={styles.forecastItem}>
                 <ThemedText style={styles.forecastDay}>
                   {index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
@@ -209,7 +150,7 @@ export default function HomeScreen() {
           {/* Field Image */}
           <View style={styles.fieldImageWrapper}>
             <Image
-              source={{ uri: WHEAT_IMAGE }}
+              source={{ uri: config.app.ASSETS.IMAGES.WHEAT }}
               style={styles.fieldImage}
               contentFit="cover"
               transition={200}
@@ -218,9 +159,8 @@ export default function HomeScreen() {
         </View>
 
         {/* Spacer for bottom nav */}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
-      <BottomNav />
     </View>
   );
 }
