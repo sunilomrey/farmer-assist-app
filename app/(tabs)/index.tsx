@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, ActivityIndicator, Dimensions, StyleSheet, Platform } from 'react-native';
-import * as Location from 'expo-location';
 import { Image } from 'expo-image';
+import React from 'react';
+import { ActivityIndicator, Dimensions, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useWeather } from '@/hooks/useWeather';
 import config from '@/config';
+import { useWeather } from '@/hooks/useWeather';
 
 const { width } = Dimensions.get('window');
 const CARD_PADDING = 16;
@@ -50,7 +49,7 @@ export default function HomeScreen() {
         <View style={styles.greetingRow}>
           <View style={styles.greetingLeft}>
             <ThemedText style={styles.hello}>
-              Hello, <ThemedText style={styles.helloName}>Harris</ThemedText>
+              Hello, <ThemedText style={styles.helloName}>Suneel</ThemedText>
             </ThemedText>
             <ThemedText style={styles.location}>📍 {weather?.locationName || 'Detecting Location...'}</ThemedText>
           </View>

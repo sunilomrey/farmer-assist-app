@@ -2,7 +2,6 @@ import { ThemedText } from '@/components/themed-text';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
-import config from '@/config';
 
 const { width } = Dimensions.get('window');
 
@@ -19,7 +18,7 @@ export default function LandingScreen() {
       <View style={styles.topSection}>
         {/* Brand header */}
         <View style={styles.header}>
-          <ThemedText style={styles.headerIcon}>🌱</ThemedText>
+          <ThemedText style={styles.headerIcon}>👨‍🌾</ThemedText>
           <ThemedText style={styles.headerTitle}>Farmer Assist</ThemedText>
         </View>
 
@@ -33,7 +32,7 @@ export default function LandingScreen() {
           </ThemedText>
           <View style={styles.titleRow}>
             <View style={styles.inlineBadge}>
-              <ThemedText style={styles.inlineBadgeIcon}>🌿</ThemedText>
+              <ThemedText style={styles.inlineBadgeIcon}>🚜</ThemedText>
             </View>
           </View>
         </View>
@@ -47,7 +46,7 @@ export default function LandingScreen() {
       {/* Bottom image section */}
       <View style={styles.imageSection}>
         <Image
-          source={{ uri: config.app.ASSETS.IMAGES.WHEAT_HIGH }}
+          source={require('../assets/images/hero.jpg')}
           style={styles.backgroundImage}
           contentFit="cover"
           transition={300}
